@@ -1,25 +1,45 @@
 import streamlit as st
 import pandas as pd
 from datetime import time
+import time as sleepTime
+
+st.title("🍟HKUST McDonald's Decision Maker")
 
 df = pd.read_csv("menu_items.csv")
+orderedMeals = []
 
-#st.write(df)
-
-
-orderTime = st.slider("Order time", min_value = time(00, 00), max_value=time(23, 59), value = time(12, 00))
+orderTime = st.slider("Order time", min_value = time(7, 00), max_value=time(23, 59), value = time(12, 00))
 priceRange = st.slider("Budget", value = (0, 60), max_value = 60)
 
-filtered_df = df[(df['alacarte'] >= priceRange[0]) & (df['alacarte'] <= priceRange[1])]
+df = df[(df['meal'] >= priceRange[0]) & (df['meal'] <= priceRange[1])]
 
-st.write(filtered_df)
 
-if orderTime < time(7, 00):
-    st.error("McDonald's is not open yet!")
-elif orderTime < time(11, 00):
+currentMenu = 0
+
+if orderTime < time(11, 00):
     st.warning("Serving Breakfast Menu")
-    # st.write(df[(filtered_df['time'] == 'Breakfast')])
+    currentMenu = df[(df['ordtime'] == 'Breakfast')]
 else:
     st.info("Serving Regular Menu")
-    # st.write(df[(filtered_df['time'] == 'Regular')])
+    currentMenu = df[(df['ordtime'] == 'Regular')]
+
+st.dataframe(currentMenu[['menuitem','meal']], height=35*(currentMenu['menuitem'].shape[0]+1) + 3)
+
+# Forum thread on optimal df height: https://discuss.streamlit.io/t/st-dataframe-controlling-the-height-threshold-for-scolling/31769/5
+
+
+with st.container(border=True):
+    st.write("Please choose:")
+    addToCart = st.multiselect("Select Product", currentMenu['menuitem'])
+    if addToCart:
+        myItem = addToCart[0]
+
+    prices = [currentMenu[currentMenu.menuitem==fooditem].meal.item() for fooditem in addToCart]
+    st.write(f"##### Total Price: ${sum(prices)}")
+    orderButton = st.button("Place order")
+
+if orderButton:
+    st.write("#### Ordered meals:")
+    for meal in addToCart:
+        st.write(meal)
 
